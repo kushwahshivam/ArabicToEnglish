@@ -8,7 +8,7 @@ import numpy as np
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 # Paths
-pdf_path = "arabicInvoice.pdf"
+pdf_path = "test.pdf"
 poppler_path = r"C:\Program Files\poppler-25.12.0\poppler-25.12.0\Library\bin"
 
 # Convert PDF to images
@@ -18,7 +18,8 @@ pages = convert_from_path(
     poppler_path=poppler_path
 )
 
-arabic_text = ""
+arabic_text = arabic_text = ""
+
 
 for page in pages:
     img = np.array(page)
@@ -39,23 +40,32 @@ for page in pages:
     arabic_text += text + "\n"
 import re
 
+
+
 def extract_invoice_data(text):
     data = {}
 
     # Invoice Number (long number)
-    match = re.search(r'\d{8,}', text)
-    data["invoice_number"] = match.group() if match else "Not found"
+    inv = re.search(r'\d{10,}', text)
+    data["invoice_number"] = inv.group() if inv else "Not found"
 
-    # Date (dd/mm/yyyy)
-    match = re.search(r'\d{2}/\d{2}/\d{4}', text)
-    data["issue_date"] = match.group() if match else "Not found"
+    # Issue Date (Arabic context)
+    date = re.search(
+        r'(تاريخ\s*الإصدار|تاريخ)\D*(\d{2}[-/]\d{2}[-/]\d{4})',
+        text
+    )
+    data["issue_date"] = date.group(2) if date else "Not found"
 
-    # Total Amount (number with decimal)
-    match = re.search(r'\d+\.\d{2}', text)
-    data["total_amount"] = match.group() if match else "Not found"
+    # Total Amount (Arabic context)
+    total = re.search(
+        r'(الإجمالي|إجمالي|المجموع)[^\d]*(\d+\.\d{2})',
+        text
+    )
+    data["total_amount"] = total.group(2) if total else "Not found"
 
     return data
 invoice_data = extract_invoice_data(arabic_text)
+
 
 print("\n📄 INVOICE REPORT")
 print("------------------------")
@@ -70,3 +80,7 @@ print("Language       : Arabic")
 # # Translate Arabic → English
 # english_text = GoogleTranslator(source="ar", target="en").translate(arabic_text)
 # print("\nENGLISH TEXT:\n", english_text)
+import json
+
+with open("invoice_report.json", "w", encoding="utf-8") as f:
+    json.dump(invoice_data, f, indent=4, ensure_ascii=False)
