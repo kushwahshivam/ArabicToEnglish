@@ -37,9 +37,36 @@ for page in pages:
     )
 
     arabic_text += text + "\n"
+import re
 
-print("ARABIC TEXT:\n", arabic_text)
+def extract_invoice_data(text):
+    data = {}
 
-# Translate Arabic → English
-english_text = GoogleTranslator(source="ar", target="en").translate(arabic_text)
-print("\nENGLISH TEXT:\n", english_text)
+    # Invoice Number (long number)
+    match = re.search(r'\d{8,}', text)
+    data["invoice_number"] = match.group() if match else "Not found"
+
+    # Date (dd/mm/yyyy)
+    match = re.search(r'\d{2}/\d{2}/\d{4}', text)
+    data["issue_date"] = match.group() if match else "Not found"
+
+    # Total Amount (number with decimal)
+    match = re.search(r'\d+\.\d{2}', text)
+    data["total_amount"] = match.group() if match else "Not found"
+
+    return data
+invoice_data = extract_invoice_data(arabic_text)
+
+print("\n📄 INVOICE REPORT")
+print("------------------------")
+print("Invoice Number :", invoice_data["invoice_number"])
+print("Issue Date     :", invoice_data["issue_date"])
+print("Total Amount   :", invoice_data["total_amount"], "SAR")
+print("Source File    :", pdf_path)
+print("Language       : Arabic")
+
+# print("ARABIC TEXT:\n", arabic_text)
+
+# # Translate Arabic → English
+# english_text = GoogleTranslator(source="ar", target="en").translate(arabic_text)
+# print("\nENGLISH TEXT:\n", english_text)
